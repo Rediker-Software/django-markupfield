@@ -53,7 +53,7 @@ class Markup(object):
     def __unicode__(self):
         if self.rendered is None:
             return mark_safe('')
-        return mark_safe(smart_text(self.rendered))
+        return self.raw
 
     __str__ = __unicode__
 
@@ -84,7 +84,7 @@ class MarkupField(models.TextField):
 
     def __init__(self, verbose_name=None, name=None, markup_type=None,
                  default_markup_type=None, markup_choices=_MARKUP_TYPES,
-                 escape_html=False, **kwargs):
+                 escape_html=False, to_string_raw=False, **kwargs):
 
         if markup_type and default_markup_type:
             raise ValueError('Cannot specify both markup_type and '
@@ -93,6 +93,7 @@ class MarkupField(models.TextField):
         self.default_markup_type = markup_type or default_markup_type
         self.markup_type_editable = markup_type is None
         self.escape_html = escape_html
+        self.to_string_raw = to_string_raw
 
         self.markup_choices_list = [mc[0] for mc in markup_choices]
         self.markup_choices_dict = dict((mc[0], mc[1]) for mc in markup_choices)
@@ -164,7 +165,7 @@ class MarkupField(models.TextField):
 
     def value_to_string(self, obj):
         value = self._get_val_from_obj(obj)
-        if hasattr(value, 'raw'):
+        if hasattr(value, 'raw') or (not hasattr(value, 'rendered') and self.to_string_raw):
             return value.raw
         return value
 
